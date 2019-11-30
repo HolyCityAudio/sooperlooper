@@ -16,6 +16,7 @@
 ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **  
 */
+#define FULLGUI 0
 
 #include <wx/wx.h>
 #include <wx/file.h>
@@ -264,7 +265,6 @@ MainPanel::init()
 	_quantize_choice->append_choice (wxT("8th"), 2);
 	_quantize_choice->append_choice (wxT("loop"), 3);
 	rowsizer->Add (_quantize_choice, 0, wxALL|wxEXPAND, 2);
-
 	_mute_quant_check = new CheckBox(_top_panel, ID_MuteQuantCheck, wxT("mute quant"), true, wxDefaultPosition, wxSize(90, 18));
 	_mute_quant_check->SetFont(sliderFont);
 	_mute_quant_check->SetToolTip(wxT("quantize mute operations"));
@@ -272,6 +272,7 @@ MainPanel::init()
 	_mute_quant_check->bind_request.connect (sigc::bind(mem_fun (*this, &MainPanel::on_bind_request), wxT("mute_quantized")));
 	rowsizer->Add (_mute_quant_check, 0, wxALL|wxEXPAND, 2);
 
+#if FULLGUI
 	_odub_quant_check = new CheckBox(_top_panel, ID_OdubQuantCheck, wxT("odub quant"), true, wxDefaultPosition, wxSize(90, 18));
 	_odub_quant_check->SetFont(sliderFont);
 	_odub_quant_check->SetToolTip(wxT("quantize overdub operations"));
@@ -285,8 +286,7 @@ MainPanel::init()
 	_repl_quant_check->value_changed.connect (mem_fun (*this, &MainPanel::on_repl_quant_check));
 	_repl_quant_check->bind_request.connect (sigc::bind(mem_fun (*this, &MainPanel::on_bind_request), wxT("replace_quantized")));
 	rowsizer->Add (_repl_quant_check, 0, wxALL|wxEXPAND, 2);
-
-
+#endif
 	rowsizer->Add (1, 1, 1);
 
 	wxStaticBitmap * logobit = new wxStaticBitmap(_top_panel, -1, wxBitmap(sl_logo_xpm));
@@ -352,14 +352,14 @@ MainPanel::init()
 	_relsync_check->bind_request.connect (sigc::bind(mem_fun (*this,  &MainPanel::on_bind_request), wxT("relative_sync")));
 	rowsizer->Add (_relsync_check, 0, wxALL|wxEXPAND, 2);
 	
-
+#if FULLGUI
 	_smart_eighths_check = new CheckBox(_top_panel, ID_SmartEighthCheck, wxT("auto 8th"), true, wxDefaultPosition, wxSize(80, 18));
 	_smart_eighths_check->SetFont(sliderFont);
 	_smart_eighths_check->SetToolTip(wxT("auto adjust 8ths per cycle with tempo"));
 	_smart_eighths_check->value_changed.connect (mem_fun (*this, &MainPanel::on_smart_eighths_check));
 	_smart_eighths_check->bind_request.connect (sigc::bind(mem_fun (*this, &MainPanel::on_bind_request), wxT("smart_eighths")));
 	rowsizer->Add (_smart_eighths_check, 0, wxALL|wxEXPAND, 2);
-
+#endif
 
 	rowsizer->Add (1, 1, 1);
 
@@ -672,7 +672,7 @@ MainPanel::update_controls()
 		_loop_control->get_value(0, wxT("mute_quantized"), val);
  		_mute_quant_check->set_value (val > 0.0);
 	}
-
+#if FULLGUI
  	if (_loop_control->is_updated(0, wxT("overdub_quantized"))) {
 		_loop_control->get_value(0, wxT("overdub_quantized"), val);
  		_odub_quant_check->set_value (val > 0.0);
@@ -687,6 +687,7 @@ MainPanel::update_controls()
 		_loop_control->get_global_value(wxT("smart_eighths"), val);
  		_smart_eighths_check->set_value (val > 0.0);
 	}
+#endif
 	
 	
 	if (_loop_control->is_updated(0, wxT("fade_samples"))) {
