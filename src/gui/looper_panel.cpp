@@ -43,7 +43,7 @@
 using namespace SooperLooper;
 using namespace SooperLooperGui;
 using namespace std;
-
+#define FULLGUI 0
 
 enum {
 	ID_UndoButton = 8000,
@@ -142,7 +142,7 @@ LooperPanel::init()
 	wxBoxSizer * mainVSizer = new wxBoxSizer(wxVERTICAL);
 
 	wxBoxSizer * colsizer = new wxBoxSizer(wxVERTICAL);
-	wxBoxSizer * rowsizer;
+	wxBoxSizer * rowsizer = new wxBoxSizer(wxHORIZONTAL);
 
 	// add selbar
 	_bgcolor.Set(0,0,0);
@@ -177,7 +177,8 @@ LooperPanel::init()
 	create_buttons();
 	
         int edgegap = 0;
-
+//==========================================
+// UNDO and REDO BUTTONS
  	colsizer->Add (_undo_button, 0, 0, 0);
 
  	colsizer->Add (_redo_button, 0, wxTOP, 5);
@@ -187,7 +188,8 @@ LooperPanel::init()
 	
 	colsizer = new wxBoxSizer(wxVERTICAL);
 
-	
+//==========================================
+// RECORD, OVERDUB, and MULTIPLY buttons	
  	colsizer->Add (_record_button, 0, wxLEFT, 5);
 
  	colsizer->Add (_overdub_button, 0, wxTOP|wxLEFT, 5);
@@ -196,17 +198,26 @@ LooperPanel::init()
 	
 	mainSizer->Add (colsizer, 0, wxEXPAND|wxBOTTOM, 0);
 
-
 	colsizer = new wxBoxSizer(wxVERTICAL);
+#if FULLGUI
 	_maininsizer = new wxBoxSizer(wxHORIZONTAL);
+#else
+	_maininsizer = new wxBoxSizer(wxVERTICAL);
+#endif
+
+//==========================================
+// input, threshold, feedback gain sliders and main in checkbox
 
 	SliderBar *slider;
 	wxFont sliderFont = *wxSMALL_FONT;
 	//cerr << "looper frame small: " << sliderFont.GetPointSize() << endl;
 	
+#if FULLGUI
 	wxBoxSizer * inthresh_sizer = new wxBoxSizer(wxHORIZONTAL);
-
 	_in_gain_control = slider = new SliderBar(this, ID_InputGainControl, 0.0f, 1.0f, 0.0f);
+#else
+	_in_gain_control = slider = new SliderBar(this, ID_InputGainControl, 0.0f, 1.0f, 0.0f, false, wxDefaultPosition, wxSize(60,25));
+#endif
 	slider->set_units(wxT(""));
 	slider->set_label(wxT("in gain"));
 	slider->set_show_indicator_bar (false);
@@ -214,9 +225,15 @@ LooperPanel::init()
 	slider->SetFont(sliderFont);
 	slider->value_changed.connect (sigc::bind(mem_fun (*this, &LooperPanel::slider_events), (int) slider->GetId()));
 	slider->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::control_bind_events), (int) slider->GetId()));
+
+#if FULLGUI
 	inthresh_sizer->Add (slider, 1, wxALL|wxEXPAND, 0);
-	
 	_thresh_control = slider = new SliderBar(this, ID_ThreshControl, 0.0f, 1.0f, 0.0f);
+#else
+	_maininsizer->Add (slider, 0, wxLEFT | wxEXPAND, 5);
+	_thresh_control = slider = new SliderBar(this, ID_ThreshControl, 0.0f, 1.0f, 0.0f);
+#endif
+	
 	slider->set_units(wxT(""));
 	slider->set_label(wxT("thresh"));
 	slider->set_show_indicator_bar (true);
@@ -224,46 +241,51 @@ LooperPanel::init()
 	slider->SetFont(sliderFont);
 	slider->value_changed.connect (sigc::bind(mem_fun (*this, &LooperPanel::slider_events), (int) slider->GetId()));
 	slider->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::control_bind_events), (int) slider->GetId()));
-	inthresh_sizer->Add (slider, 1, wxLEFT|wxEXPAND, 3);
-	
-	colsizer->Add (inthresh_sizer, 1, wxEXPAND|wxLEFT, 5);
 
+#if FULLGUI
+	inthresh_sizer->Add (slider, 1, wxLEFT|wxEXPAND, 3);
+	colsizer->Add (inthresh_sizer, 1, wxEXPAND|wxLEFT, 5);
 	_feedback_control = slider = new SliderBar(this, ID_FeedbackControl, 0.0f, 100.0f, 100.0f);
+#else
+	_maininsizer->Add (slider, 0, wxEXPAND|wxLEFT|wxTOP, 5);
+	_feedback_control = slider = new SliderBar(this, ID_FeedbackControl, 0.0f, 100.0f, 100.0f);
+#endif
+
 	slider->set_units(wxT("%"));
 	slider->set_label(wxT("feedback"));
 	slider->SetFont(sliderFont);
 	slider->value_changed.connect (sigc::bind(mem_fun (*this, &LooperPanel::slider_events), (int) slider->GetId()));
 	slider->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::control_bind_events), (int) slider->GetId()));
 
+#if FULLGUI
 	_maininsizer->Add (slider, 1, wxEXPAND|wxTOP, 5);
-
+	colsizer->Add (_maininsizer, 1, wxEXPAND|wxLEFT, 5);
+#else
+	_maininsizer->Add (slider, 0, wxEXPAND|wxLEFT|wxTOP,  5);
+//	_maininsizer->Add (110, 0, 0);
+#endif
 	// mainin check added later
 	_use_main_in_check = 0;
 	
-	colsizer->Add (_maininsizer, 1, wxEXPAND|wxLEFT, 5);
-
-
-	
+#if FULLGUI
 	//colsizer->Add (20, 5, 0, wxEXPAND);
 	rowsizer = new wxBoxSizer(wxHORIZONTAL);
  	rowsizer->Add (_replace_button, 0, wxTOP|wxLEFT, 5);
-
  	rowsizer->Add (_insert_button, 0, wxTOP|wxLEFT, 5);
-
 	colsizer->Add (rowsizer, 0);
 
 	rowsizer = new wxBoxSizer(wxHORIZONTAL);
-	
  	rowsizer->Add (_substitute_button, 0, wxTOP|wxLEFT, 5);
-
-	//_reverse_button->Show(false);
  	rowsizer->Add (_delay_button, 0, wxTOP|wxLEFT, 5);
-
+	//_reverse_button->Show(false);
 	colsizer->Add (rowsizer, 0);
-	
 	mainSizer->Add (colsizer, 0, wxEXPAND, 5);
+#else
+	mainSizer->Add (_maininsizer, 1, wxEXPAND, 5);
+#endif
 	
-
+//==========================================
+// Time readout, input gain slider, pan controls
 	// time area
 	colsizer = new wxBoxSizer(wxVERTICAL);
 
@@ -322,15 +344,14 @@ LooperPanel::init()
 	*/
 	
 	colsizer->Add (_botpansizer, 1, wxEXPAND|wxTOP|wxLEFT, 4);
-	
-	
-	mainSizer->Add (colsizer, 0, wxEXPAND, 5);
-
+	mainSizer->Add (colsizer, 0, 0, 5);
 
 	//
 
 	colsizer = new wxBoxSizer(wxVERTICAL);
+#if FULLGUI
 	rowsizer = new wxBoxSizer(wxHORIZONTAL);
+#endif
 	wxBoxSizer * lilcolsizer = new wxBoxSizer(wxVERTICAL);
 	
 // 	_quantize_choice = new ChoiceBox (this, ID_QuantizeChoice, wxDefaultPosition, wxSize (110, 22));
@@ -349,8 +370,9 @@ LooperPanel::init()
 // 	_quantize_check->SetForegroundColour(*wxWHITE);
 // 	lilrowsizer->Add (_quantize_check, 0, wxEXPAND);
 	
-	
+#if FULLGUI
 	wxBoxSizer * lilrowsizer = new wxBoxSizer(wxHORIZONTAL);
+#endif
 	
 // 	_round_check = new wxCheckBox(this, ID_RoundCheck, "round");
 // 	_round_check->SetFont(sliderFont);
@@ -358,81 +380,22 @@ LooperPanel::init()
 // 	_round_check->SetForegroundColour(*wxWHITE);
 // 	lilrowsizer->Add (_round_check, 0, wxEXPAND);
 
-	_sync_check = new CheckBox(this, ID_SyncCheck, wxT("sync"), true, wxDefaultPosition, wxSize(55, 18));
+	_sync_check = new CheckBox(this, ID_SyncCheck, wxT("sync"), true, wxDefaultPosition, wxSize(35, 18));
 	_sync_check->SetFont(sliderFont);
 	_sync_check->SetToolTip(wxT("sync operations to quantize source"));
 	_sync_check->value_changed.connect (sigc::bind(mem_fun (*this, &LooperPanel::check_events), wxT("sync")));
 	_sync_check->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::control_bind_events), (int) _sync_check->GetId()));
+
+// the scratch control is also the readout for loop position.  With the 
+// scratch button hidden, it just shows the loop positon.
+	// scratch control
+	_scratch_control = slider = new SliderBar(this, ID_ScratchControl, 0.0f, 1.0f, 0.0f, false, wxDefaultPosition, wxSize(60,30));
+
+#if FULLGUI
 	lilrowsizer->Add (_sync_check, 1, wxLEFT, 3);
 	lilcolsizer->Add (lilrowsizer, 0, wxTOP|wxEXPAND, 0);
-
 	lilrowsizer = new wxBoxSizer(wxHORIZONTAL);
-	_play_sync_check = new CheckBox(this, ID_PlaySyncCheck, wxT("play sync"), true, wxDefaultPosition, wxSize(55, 18));
-	_play_sync_check->SetFont(sliderFont);
-	_play_sync_check->SetToolTip(wxT("sync playback auto-triggering to quantized sync source"));
-	_play_sync_check->value_changed.connect (sigc::bind(mem_fun (*this, &LooperPanel::check_events), wxT("playback_sync")));
-	_play_sync_check->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::control_bind_events), (int) _play_sync_check->GetId()));
-	lilrowsizer->Add (_play_sync_check, 1, wxLEFT, 3);
-	lilcolsizer->Add (lilrowsizer, 0, wxTOP|wxEXPAND, 0);
-	
-	lilrowsizer = new wxBoxSizer(wxHORIZONTAL);
-	_play_feed_check = new CheckBox(this, ID_UseFeedbackPlayCheck, wxT("p. feedb"), true, wxDefaultPosition, wxSize(55, 18));
-	_play_feed_check->SetFont(sliderFont);
-	_play_feed_check->SetToolTip(wxT("enable feedback during playback"));
-	_play_feed_check->value_changed.connect (sigc::bind(mem_fun (*this, &LooperPanel::check_events), wxT("use_feedback_play")));
-	_play_feed_check->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::control_bind_events), (int) _play_feed_check->GetId()));
-	lilrowsizer->Add (_play_feed_check, 1, wxLEFT, 3);
-
-	_tempo_stretch_check = new CheckBox(this, ID_TempoStretchCheck, wxT("t. stretch"), true, wxDefaultPosition, wxSize(55, 18));
-	_tempo_stretch_check->SetFont(sliderFont);
-	_tempo_stretch_check->SetToolTip(wxT("enable automatic timestretch when tempo changes"));
-	_tempo_stretch_check->value_changed.connect (sigc::bind(mem_fun (*this, &LooperPanel::check_events), wxT("tempo_stretch")));
-	_tempo_stretch_check->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::control_bind_events), (int) _tempo_stretch_check->GetId()));
-	lilrowsizer->Add (_tempo_stretch_check, 1, wxLEFT, 3);
-
-	lilcolsizer->Add (lilrowsizer, 0, wxTOP|wxEXPAND, 0);
-	
-	rowsizer->Add(lilcolsizer, 1, wxLEFT, 3);
-
-
-	lilcolsizer = new wxBoxSizer(wxVERTICAL);
-	
-	lilcolsizer->Add (_load_button, 0, wxTOP, 0);
-
-	lilcolsizer->Add (_save_button, 0, wxTOP, 2);
-	
-	rowsizer->Add(lilcolsizer, 0, wxLEFT, 3);
-
-	lilcolsizer = new wxBoxSizer(wxVERTICAL);
-	
-	lilcolsizer->Add (_trig_button, 0, wxTOP, 0);
-
-	lilcolsizer->Add (_once_button, 0, wxTOP, 2);
-	
-	rowsizer->Add(lilcolsizer, 0, wxLEFT, 3);
-	
-	lilcolsizer = new wxBoxSizer(wxVERTICAL);
-	
- 	lilcolsizer->Add (_mute_button, 0, wxTOP, 0);
-
- 	lilcolsizer->Add (_solo_button, 0, wxTOP, 2);
-
-	rowsizer->Add(lilcolsizer, 0, wxLEFT, 3);	
-
-	colsizer->Add (rowsizer, 0, wxEXPAND);
-
-	colsizer->Add (20,-1, 1);
-	
-
-	// scratch stuff
-	rowsizer = new wxBoxSizer(wxHORIZONTAL);
-
- 	rowsizer->Add (_reverse_button, 0, wxTOP|wxLEFT, 3);
-
-	rowsizer->Add (_scratch_button, 0, wxTOP|wxLEFT, 3);
-
-	// scratch control
-	_scratch_control = slider = new SliderBar(this, ID_ScratchControl, 0.0f, 1.0f, 0.0f);
+#else
 	slider->set_units(wxT(""));
 	slider->set_label(wxT("pos"));
 	slider->set_style (SliderBar::HiddenStyle);
@@ -442,8 +405,83 @@ LooperPanel::init()
 	slider->SetFont(sliderFont);
 	slider->value_changed.connect (sigc::bind(mem_fun (*this, &LooperPanel::slider_events), (int) slider->GetId()));
 	slider->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::control_bind_events), (int) slider->GetId()));
-	rowsizer->Add (slider, 1, wxEXPAND|wxTOP|wxLEFT, 3);
+	colsizer->Add (slider, 1, wxEXPAND|wxLEFT, 3);
+	colsizer->Add (_sync_check, 1, wxLEFT|wxEXPAND, 3);
+#endif
 
+	_play_sync_check = new CheckBox(this, ID_PlaySyncCheck, wxT("play sync"), true, wxDefaultPosition, wxSize(35, 18));
+	_play_sync_check->SetFont(sliderFont);
+	_play_sync_check->SetToolTip(wxT("sync playback auto-triggering to quantized sync source"));
+	_play_sync_check->value_changed.connect (sigc::bind(mem_fun (*this, &LooperPanel::check_events), wxT("playback_sync")));
+	_play_sync_check->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::control_bind_events), (int) _play_sync_check->GetId()));
+#if FULLGUI
+	lilrowsizer->Add (_play_sync_check, 1, wxLEFT, 3);
+	lilcolsizer->Add (lilrowsizer, 0, wxTOP|wxEXPAND, 0);
+	lilrowsizer = new wxBoxSizer(wxHORIZONTAL);
+#else
+	colsizer->Add (_play_sync_check, 1, wxLEFT|wxEXPAND, 3);
+#endif
+	
+	_play_feed_check = new CheckBox(this, ID_UseFeedbackPlayCheck, wxT("p. feedb"), true, wxDefaultPosition, wxSize(35, 18));
+	_play_feed_check->SetFont(sliderFont);
+	_play_feed_check->SetToolTip(wxT("enable feedback during playback"));
+	_play_feed_check->value_changed.connect (sigc::bind(mem_fun (*this, &LooperPanel::check_events), wxT("use_feedback_play")));
+	_play_feed_check->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::control_bind_events), (int) _play_feed_check->GetId()));
+#if FULLGUI
+	lilrowsizer->Add (_play_feed_check, 1, wxLEFT | wxEXPAND, 3);
+#else
+	colsizer->Add (_play_feed_check, 1, wxLEFT | wxEXPAND, 3);
+        mainSizer->Add (colsizer, 1, wxLEFT, 1);
+	colsizer = new wxBoxSizer(wxVERTICAL);
+#endif
+
+#if FULLGUI
+	_tempo_stretch_check = new CheckBox(this, ID_TempoStretchCheck, wxT("t. stretch"), true, wxDefaultPosition, wxSize(55, 18));
+	_tempo_stretch_check->SetFont(sliderFont);
+	_tempo_stretch_check->SetToolTip(wxT("enable automatic timestretch when tempo changes"));
+	_tempo_stretch_check->value_changed.connect (sigc::bind(mem_fun (*this, &LooperPanel::check_events), wxT("tempo_stretch")));
+	_tempo_stretch_check->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::control_bind_events), (int) _tempo_stretch_check->GetId()));
+	lilrowsizer->Add (_tempo_stretch_check, 1, wxLEFT, 3);
+	lilcolsizer->Add (lilrowsizer, 0, wxTOP|wxEXPAND, 0);
+	rowsizer->Add(lilcolsizer, 1, wxLEFT, 3);
+
+	lilcolsizer = new wxBoxSizer(wxVERTICAL);
+	lilcolsizer->Add (_load_button, 0, wxTOP, 0);
+	lilcolsizer->Add (_save_button, 0, wxTOP, 2);
+	rowsizer->Add(lilcolsizer, 0, wxLEFT, 3);
+	lilcolsizer = new wxBoxSizer(wxVERTICAL);
+	lilcolsizer->Add (_trig_button, 0, wxTOP, 0);
+	lilcolsizer->Add (_once_button, 0, wxTOP, 2);
+	rowsizer->Add(lilcolsizer, 0, wxLEFT, 3);
+	lilcolsizer = new wxBoxSizer(wxVERTICAL);
+ 	lilcolsizer->Add (_mute_button, 0, wxTOP, 0);
+ 	lilcolsizer->Add (_solo_button, 0, wxTOP, 2);
+	rowsizer->Add(lilcolsizer, 0, wxLEFT, 3);	
+#else
+	lilcolsizer = new wxBoxSizer(wxVERTICAL);
+	lilcolsizer->Add (_load_button, 0, wxTOP, 0);
+	lilcolsizer->Add (_trig_button, 0, wxTOP, 2);
+ 	lilcolsizer->Add (_mute_button, 0, wxTOP, 2);
+	lilcolsizer->Add (_pause_button, 0, wxTOP, 2);
+	rowsizer->Add(lilcolsizer, 0, wxLEFT, 3);
+
+	lilcolsizer = new wxBoxSizer(wxVERTICAL);
+	lilcolsizer->Add (_save_button, 0, wxTOP, 0);
+	lilcolsizer->Add (_once_button, 0, wxTOP, 2);
+ 	lilcolsizer->Add (_solo_button, 0, wxTOP, 2);
+	rowsizer->Add(lilcolsizer, 0, wxLEFT, 3);
+#endif
+
+	colsizer->Add (rowsizer, 0, wxEXPAND);
+
+//	colsizer->Add (10,-1, 1);
+
+
+#if FULLGUI
+ 	rowsizer->Add (_reverse_button, 0, wxTOP|wxLEFT, 3);
+	// scratch stuff
+	rowsizer = new wxBoxSizer(wxHORIZONTAL);
+	rowsizer->Add (_scratch_button, 0, wxTOP|wxLEFT, 3);
 	// pitch control
 	_pitch_control = slider = new SliderBar(this, ID_PitchControl, -12.0f, 12.0f, 0.0f);
 	slider->set_units(wxT(""));
@@ -458,10 +496,7 @@ LooperPanel::init()
 
 	// pause
  	rowsizer->Add (_pause_button, 0, wxTOP|wxLEFT, 3);
-
-	
 	colsizer->Add (rowsizer, 0, wxEXPAND);
-
 	// rate stuff
 	rowsizer = new wxBoxSizer(wxHORIZONTAL);
 
@@ -490,6 +525,7 @@ LooperPanel::init()
 	slider->value_changed.connect (sigc::bind(mem_fun (*this, &LooperPanel::slider_events), (int) slider->GetId()));
 	slider->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::control_bind_events), (int) slider->GetId()));
 	rowsizer->Add (slider, 1, wxEXPAND|wxTOP|wxLEFT, 3);
+#endif
 
 
 	/*
@@ -503,10 +539,10 @@ LooperPanel::init()
 	rowsizer->Add (_triglatency_spin, 0, wxALL, 0);
 	*/
 	
-	colsizer->Add (rowsizer, 0, wxEXPAND|wxLEFT, 1);
+//	colsizer->Add (rowsizer, 0, wxEXPAND|wxLEFT, 1);
 
 	
-	mainSizer->Add (colsizer, 1, wxEXPAND|wxRIGHT, 0);
+	mainSizer->Add (rowsizer, 1, wxEXPAND|wxLEFT, 0);
 
         mainSizer->Add (_rightSelbar, 0, wxEXPAND|wxLEFT, 0);
 
@@ -524,13 +560,11 @@ LooperPanel::init()
 // 	_index_text->Raise();
 	
 	bind_events();
-	
-	
+		
 	this->SetAutoLayout( true );     // tell dialog to use sizer
 	this->SetSizer( mainVSizer );      // actually set the sizer
 	mainVSizer->Fit( this );            // set size to minimum size as calculated by the sizer
 	mainVSizer->SetSizeHints( this );   // set size hints to honour mininum size
-
 }
 
 void
@@ -550,7 +584,7 @@ LooperPanel::post_init()
 		_has_discrete_io = true;
 
 		// dry is only meaningful with discrete io
-		_dry_control = slider = new SliderBar(this, ID_DryControl, 0.0f, 1.0f, 1.0f);
+		_dry_control = slider = new SliderBar(this, ID_DryControl, 0.0f, 1.0f, 1.0f, false, wxDefaultPosition, wxSize(60,20));
 		slider->set_units(wxT("dB"));
 		slider->set_label(wxT("in mon"));
 		slider->set_scale_mode(SliderBar::ZeroGainMode);
@@ -564,8 +598,13 @@ LooperPanel::post_init()
 		_use_main_in_check->SetToolTip(wxT("mix input from Main inputs"));
 		_use_main_in_check->value_changed.connect (sigc::bind(mem_fun (*this, &LooperPanel::check_events), wxT("use_common_ins")));
 		_use_main_in_check->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::control_bind_events), (int) _use_main_in_check->GetId()));
+#if FULLGUI
 		_maininsizer->Add (_use_main_in_check, 0, wxALL|wxEXPAND|wxALIGN_CENTRE_VERTICAL ,0);
 		_maininsizer->Layout();
+#else
+		_maininsizer->Add (_use_main_in_check, 0, wxALL|wxEXPAND|wxALIGN_CENTRE_VERTICAL ,0);
+		_maininsizer->Layout();
+#endif
 
 		_feedback_control->set_label(wxT("feedb"));
 
@@ -672,34 +711,15 @@ LooperPanel::bind_events()
 	_multiply_button->released.connect (sigc::bind(mem_fun (*this, &LooperPanel::released_events), wxString(wxT("multiply"))));
 	_multiply_button->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::button_bind_events), wxString(wxT("multiply"))));
 
-	_replace_button->pressed.connect (sigc::bind(mem_fun (*this, &LooperPanel::pressed_events), wxString(wxT("replace"))));
-	_replace_button->released.connect (sigc::bind(mem_fun (*this, &LooperPanel::released_events), wxString(wxT("replace"))));
-	_replace_button->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::button_bind_events), wxString(wxT("replace"))));
-
-	_insert_button->pressed.connect (sigc::bind(mem_fun (*this, &LooperPanel::pressed_events), wxString(wxT("insert"))));
-	_insert_button->released.connect (sigc::bind(mem_fun (*this, &LooperPanel::released_events), wxString(wxT("insert"))));
-	_insert_button->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::button_bind_events), wxString(wxT("insert"))));
+//===================================
+	_trig_button->pressed.connect (sigc::bind(mem_fun (*this, &LooperPanel::pressed_events), wxString(wxT("trigger"))));
+	_trig_button->released.connect (sigc::bind(mem_fun (*this, &LooperPanel::released_events), wxString(wxT("trigger"))));
+	_trig_button->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::button_bind_events), wxString(wxT("trigger"))));
 
 	_once_button->pressed.connect (sigc::bind(mem_fun (*this, &LooperPanel::pressed_events), wxString(wxT("oneshot"))));
 	_once_button->released.connect (sigc::bind(mem_fun (*this, &LooperPanel::released_events), wxString(wxT("oneshot"))));
 	_once_button->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::button_bind_events), wxString(wxT("oneshot"))));
 
-	_trig_button->pressed.connect (sigc::bind(mem_fun (*this, &LooperPanel::pressed_events), wxString(wxT("trigger"))));
-	_trig_button->released.connect (sigc::bind(mem_fun (*this, &LooperPanel::released_events), wxString(wxT("trigger"))));
-	_trig_button->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::button_bind_events), wxString(wxT("trigger"))));
-
-	_delay_button->pressed.connect (mem_fun (*this, &LooperPanel::delay_button_press_event));
-	_delay_button->released.connect (mem_fun (*this, &LooperPanel::delay_button_release_event));
-	_delay_button->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::button_bind_events), wxString(wxT("delay_trigger"))));
-
-	_reverse_button->pressed.connect (sigc::bind(mem_fun (*this, &LooperPanel::pressed_events), wxString(wxT("reverse"))));
-	_reverse_button->released.connect (sigc::bind(mem_fun (*this, &LooperPanel::released_events), wxString(wxT("reverse"))));
-	_reverse_button->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::button_bind_events), wxString(wxT("reverse"))));
-
-	_substitute_button->pressed.connect (sigc::bind(mem_fun (*this, &LooperPanel::pressed_events), wxString(wxT("substitute"))));
-	_substitute_button->released.connect (sigc::bind(mem_fun (*this, &LooperPanel::released_events), wxString(wxT("substitute"))));
-	_substitute_button->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::button_bind_events), wxString(wxT("substitute"))));
-	
 	_mute_button->pressed.connect (sigc::bind(mem_fun (*this, &LooperPanel::pressed_events), wxString(wxT("mute"))));
 	_mute_button->released.connect (sigc::bind(mem_fun (*this, &LooperPanel::released_events), wxString(wxT("mute"))));
 	_mute_button->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::button_bind_events), wxString(wxT("mute"))));
@@ -712,28 +732,48 @@ LooperPanel::bind_events()
 	_solo_button->released.connect (sigc::bind(mem_fun (*this, &LooperPanel::released_events), wxString(wxT("solo"))));
 	_solo_button->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::button_bind_events), wxString(wxT("solo"))));
 
+        _scratch_control->pressed.connect (sigc::bind(mem_fun (*this, &LooperPanel::scratch_events), wxString(wxT("scratch_press"))));
+	_scratch_control->released.connect (sigc::bind(mem_fun (*this, &LooperPanel::scratch_events), wxString(wxT("scratch_release"))));
+
+	_save_button->clicked.connect (sigc::bind(mem_fun (*this, &LooperPanel::clicked_events), wxString(wxT("save"))));
+	_load_button->clicked.connect (sigc::bind(mem_fun (*this, &LooperPanel::clicked_events), wxString(wxT("load"))));
+	
+	_loop_control->MidiBindingChanged.connect (mem_fun (*this, &LooperPanel::got_binding_changed));
+	_loop_control->MidiLearnCancelled.connect (mem_fun (*this, &LooperPanel::got_learn_canceled));
+	
+//===================================
+#if FULLGUI
+	_replace_button->pressed.connect (sigc::bind(mem_fun (*this, &LooperPanel::pressed_events), wxString(wxT("replace"))));
+	_replace_button->released.connect (sigc::bind(mem_fun (*this, &LooperPanel::released_events), wxString(wxT("replace"))));
+	_replace_button->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::button_bind_events), wxString(wxT("replace"))));
+
+	_insert_button->pressed.connect (sigc::bind(mem_fun (*this, &LooperPanel::pressed_events), wxString(wxT("insert"))));
+	_insert_button->released.connect (sigc::bind(mem_fun (*this, &LooperPanel::released_events), wxString(wxT("insert"))));
+	_insert_button->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::button_bind_events), wxString(wxT("insert"))));
+
+	_delay_button->pressed.connect (mem_fun (*this, &LooperPanel::delay_button_press_event));
+	_delay_button->released.connect (mem_fun (*this, &LooperPanel::delay_button_release_event));
+	_delay_button->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::button_bind_events), wxString(wxT("delay_trigger"))));
+
+	_reverse_button->pressed.connect (sigc::bind(mem_fun (*this, &LooperPanel::pressed_events), wxString(wxT("reverse"))));
+	_reverse_button->released.connect (sigc::bind(mem_fun (*this, &LooperPanel::released_events), wxString(wxT("reverse"))));
+	_reverse_button->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::button_bind_events), wxString(wxT("reverse"))));
+
+	_substitute_button->pressed.connect (sigc::bind(mem_fun (*this, &LooperPanel::pressed_events), wxString(wxT("substitute"))));
+	_substitute_button->released.connect (sigc::bind(mem_fun (*this, &LooperPanel::released_events), wxString(wxT("substitute"))));
+	_substitute_button->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::button_bind_events), wxString(wxT("substitute"))));
+
+	_scratch_button->pressed.connect (sigc::bind(mem_fun (*this, &LooperPanel::pressed_events), wxString(wxT("scratch"))));
+	_scratch_button->released.connect (sigc::bind(mem_fun (*this, &LooperPanel::released_events), wxString(wxT("scratch"))));
+	_scratch_button->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::button_bind_events), wxString(wxT("scratch"))));
+
 	_halfx_button->pressed.connect (sigc::bind(mem_fun (*this, &LooperPanel::rate_button_event), 0.5f));
 	_halfx_button->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::rate_bind_events), 0.5f));
 	_1x_button->pressed.connect (sigc::bind(mem_fun (*this, &LooperPanel::rate_button_event), 1.0f));
 	_1x_button->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::rate_bind_events), 1.0f));
 	_2x_button->pressed.connect (sigc::bind(mem_fun (*this, &LooperPanel::rate_button_event), 2.0f));
 	_2x_button->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::rate_bind_events), 2.0f));
-
-	_scratch_button->pressed.connect (sigc::bind(mem_fun (*this, &LooperPanel::pressed_events), wxString(wxT("scratch"))));
-	_scratch_button->released.connect (sigc::bind(mem_fun (*this, &LooperPanel::released_events), wxString(wxT("scratch"))));
-	_scratch_button->bind_request.connect (sigc::bind(mem_fun (*this, &LooperPanel::button_bind_events), wxString(wxT("scratch"))));
-
-	_save_button->clicked.connect (sigc::bind(mem_fun (*this, &LooperPanel::clicked_events), wxString(wxT("save"))));
-	_load_button->clicked.connect (sigc::bind(mem_fun (*this, &LooperPanel::clicked_events), wxString(wxT("load"))));
-
-
-	_scratch_control->pressed.connect (sigc::bind(mem_fun (*this, &LooperPanel::scratch_events), wxString(wxT("scratch_press"))));
-	_scratch_control->released.connect (sigc::bind(mem_fun (*this, &LooperPanel::scratch_events), wxString(wxT("scratch_release"))));
-
-	
-	_loop_control->MidiBindingChanged.connect (mem_fun (*this, &LooperPanel::got_binding_changed));
-	_loop_control->MidiLearnCancelled.connect (mem_fun (*this, &LooperPanel::got_learn_canceled));
-	
+#endif
 }
 
 void LooperPanel::create_buttons()
@@ -743,12 +783,6 @@ void LooperPanel::create_buttons()
  	_record_button = new PixButton(this, ID_RecordButton);
  	_overdub_button = new PixButton(this, ID_OverdubButton);
  	_multiply_button = new PixButton(this, ID_MultiplyButton);
- 	_replace_button = new PixButton(this, ID_ReplaceButton);
- 	_delay_button = new PixButton(this, ID_TapButton);
- 	_insert_button = new PixButton(this, ID_InsertButton);
- 	_reverse_button = new PixButton(this, ID_ReverseButton);
-	//_reverse_button->SetToolTip(wxT("reverses direction"));
- 	_substitute_button = new PixButton(this, ID_SubstituteButton);
  	_load_button = new PixButton(this, ID_LoadButton, false);
  	_save_button = new PixButton(this, ID_SaveButton, false);
  	_trig_button = new PixButton(this, ID_TrigButton);
@@ -756,12 +790,7 @@ void LooperPanel::create_buttons()
  	_mute_button = new PixButton(this, ID_MuteButton);
  	_pause_button = new PixButton(this, ID_PauseButton);
  	_solo_button = new PixButton(this, ID_SoloButton);
- 	_scratch_button = new PixButton(this, ID_ScratchButton);
- 	_halfx_button = new PixButton(this, ID_HalfXButton, true);
- 	_1x_button = new PixButton(this, ID_OneXButton, true);
-	_2x_button = new PixButton(this, ID_DoubleXButton, true);
 
-	
 	// load them all up manually
 	_undo_button->set_normal_bitmap (wxBitmap(undo_normal));
 	_undo_button->set_selected_bitmap (wxBitmap(undo_selected));
@@ -772,8 +801,8 @@ void LooperPanel::create_buttons()
 	_redo_button->set_normal_bitmap (wxBitmap(redo_normal));
 	_redo_button->set_selected_bitmap (wxBitmap(redo_selected));
 	_redo_button->set_focus_bitmap (wxBitmap(redo_focus));
-	_redo_button->set_disabled_bitmap (wxBitmap(redo_disabled));
 	_redo_button->set_active_bitmap (wxBitmap(redo_active));
+	_redo_button->set_disabled_bitmap (wxBitmap(redo_disabled));
 
 	_record_button->set_normal_bitmap (wxBitmap(record_normal));
 	_record_button->set_selected_bitmap (wxBitmap(record_selected));
@@ -792,6 +821,18 @@ void LooperPanel::create_buttons()
 	_multiply_button->set_focus_bitmap (wxBitmap(multiply_focus));
 	_multiply_button->set_disabled_bitmap (wxBitmap(multiply_disabled));
 	_multiply_button->set_active_bitmap (wxBitmap(multiply_active));
+
+#if FULLGUI
+ 	_delay_button = new PixButton(this, ID_TapButton);
+ 	_insert_button = new PixButton(this, ID_InsertButton);
+ 	_reverse_button = new PixButton(this, ID_ReverseButton);
+	//_reverse_button->SetToolTip(wxT("reverses direction"));
+ 	_replace_button = new PixButton(this, ID_ReplaceButton);
+ 	_substitute_button = new PixButton(this, ID_SubstituteButton);
+ 	_halfx_button = new PixButton(this, ID_HalfXButton, true);
+ 	_1x_button = new PixButton(this, ID_OneXButton, true);
+	_2x_button = new PixButton(this, ID_DoubleXButton, true);
+ 	_scratch_button = new PixButton(this, ID_ScratchButton);
 
 	_replace_button->set_normal_bitmap (wxBitmap(replace_normal));
 	_replace_button->set_selected_bitmap (wxBitmap(replace_selected));
@@ -822,7 +863,32 @@ void LooperPanel::create_buttons()
 	_substitute_button->set_focus_bitmap (wxBitmap(substitute_focus));
 	_substitute_button->set_disabled_bitmap (wxBitmap(substitute_disabled));
 	_substitute_button->set_active_bitmap (wxBitmap(substitute_active));
-	
+
+	_1x_button->set_normal_bitmap (wxBitmap(onex_rate_normal));
+	_1x_button->set_selected_bitmap (wxBitmap(onex_rate_selected));
+	_1x_button->set_focus_bitmap (wxBitmap(onex_rate_focus));
+	_1x_button->set_disabled_bitmap (wxBitmap(onex_rate_disabled));
+	_1x_button->set_active_bitmap (wxBitmap(onex_rate_active));
+
+	_2x_button->set_normal_bitmap (wxBitmap(double_rate_normal));
+	_2x_button->set_selected_bitmap (wxBitmap(double_rate_selected));
+	_2x_button->set_focus_bitmap (wxBitmap(double_rate_focus));
+	_2x_button->set_disabled_bitmap (wxBitmap(double_rate_disabled));
+	_2x_button->set_active_bitmap (wxBitmap(double_rate_active));
+
+	_halfx_button->set_normal_bitmap (wxBitmap(half_rate_normal));
+	_halfx_button->set_selected_bitmap (wxBitmap(half_rate_selected));
+	_halfx_button->set_focus_bitmap (wxBitmap(half_rate_focus));
+	_halfx_button->set_disabled_bitmap (wxBitmap(half_rate_disabled));
+	_halfx_button->set_active_bitmap (wxBitmap(half_rate_active));
+
+	_scratch_button->set_normal_bitmap (wxBitmap(scratch_normal));
+	_scratch_button->set_selected_bitmap (wxBitmap(scratch_selected));
+	_scratch_button->set_focus_bitmap (wxBitmap(scratch_focus));
+	_scratch_button->set_disabled_bitmap (wxBitmap(scratch_disabled));
+	_scratch_button->set_active_bitmap (wxBitmap(scratch_active));
+#endif
+
 	_mute_button->set_normal_bitmap (wxBitmap(mute_normal));
 	_mute_button->set_selected_bitmap (wxBitmap(mute_selected));
 	_mute_button->set_focus_bitmap (wxBitmap(mute_focus));
@@ -840,12 +906,6 @@ void LooperPanel::create_buttons()
 	_solo_button->set_focus_bitmap (wxBitmap(solo_focus));
 	_solo_button->set_disabled_bitmap (wxBitmap(solo_disabled));
 	_solo_button->set_active_bitmap (wxBitmap(solo_active));
-
-	_scratch_button->set_normal_bitmap (wxBitmap(scratch_normal));
-	_scratch_button->set_selected_bitmap (wxBitmap(scratch_selected));
-	_scratch_button->set_focus_bitmap (wxBitmap(scratch_focus));
-	_scratch_button->set_disabled_bitmap (wxBitmap(scratch_disabled));
-	_scratch_button->set_active_bitmap (wxBitmap(scratch_active));
 
 	_load_button->set_normal_bitmap (wxBitmap(load_normal));
 	_load_button->set_selected_bitmap (wxBitmap(load_selected));
@@ -869,30 +929,8 @@ void LooperPanel::create_buttons()
 	_trig_button->set_selected_bitmap (wxBitmap(trig_selected));
 	_trig_button->set_focus_bitmap (wxBitmap(trig_focus));
 	_trig_button->set_disabled_bitmap (wxBitmap(trig_disabled));
-	_trig_button->set_active_bitmap (wxBitmap(trig_active));
-
-	_1x_button->set_normal_bitmap (wxBitmap(onex_rate_normal));
-	_1x_button->set_selected_bitmap (wxBitmap(onex_rate_selected));
-	_1x_button->set_focus_bitmap (wxBitmap(onex_rate_focus));
-	_1x_button->set_disabled_bitmap (wxBitmap(onex_rate_disabled));
-	_1x_button->set_active_bitmap (wxBitmap(onex_rate_active));
-
-	_2x_button->set_normal_bitmap (wxBitmap(double_rate_normal));
-	_2x_button->set_selected_bitmap (wxBitmap(double_rate_selected));
-	_2x_button->set_focus_bitmap (wxBitmap(double_rate_focus));
-	_2x_button->set_disabled_bitmap (wxBitmap(double_rate_disabled));
-	_2x_button->set_active_bitmap (wxBitmap(double_rate_active));
-
-	_halfx_button->set_normal_bitmap (wxBitmap(half_rate_normal));
-	_halfx_button->set_selected_bitmap (wxBitmap(half_rate_selected));
-	_halfx_button->set_focus_bitmap (wxBitmap(half_rate_focus));
-	_halfx_button->set_disabled_bitmap (wxBitmap(half_rate_disabled));
-	_halfx_button->set_active_bitmap (wxBitmap(half_rate_active));
-
-	
+	_trig_button->set_active_bitmap (wxBitmap(trig_active));	
 }
-
-
 
 void
 LooperPanel::update_controls()
@@ -949,6 +987,7 @@ LooperPanel::update_controls()
 		_loop_control->get_value(_index, wxT("wet"), val);
 		_wet_control->set_value (val);
 	}
+#if FULLGUI
 	if (_loop_control->is_updated(_index, wxT("rate"))) {
 		_loop_control->get_value(_index, wxT("rate"), val);
 		_rate_control->set_value (val);
@@ -972,6 +1011,7 @@ LooperPanel::update_controls()
 			_reverse_button->set_active(false);
 		}
 	}
+#endif
 	if (_loop_control->is_updated(_index, wxT("scratch_pos"))) {
 		_loop_control->get_value(_index, wxT("scratch_pos"), val);
 		_scratch_control->set_value (val);
@@ -1014,10 +1054,12 @@ LooperPanel::update_controls()
 		_loop_control->get_value(_index, wxT("use_feedback_play"), val);
 		_play_feed_check->set_value (val > 0.0f);
 	}
+#if FULLGUI
 	if (_loop_control->is_updated(_index, wxT("tempo_stretch"))) {
 		_loop_control->get_value(_index, wxT("tempo_stretch"), val);
 		_tempo_stretch_check->set_value (val > 0.0f);
 	}
+#endif
 
 	if (_loop_control->is_updated(_index, wxT("is_soloed"))) {
 		_loop_control->get_value(_index, wxT("is_soloed"), val);
@@ -1101,6 +1143,7 @@ LooperPanel::update_state()
 	case LooperStateMultiplying:
 		_multiply_button->set_active(false);
 		break;
+#if FULLGUI
 	case LooperStateReplacing:
 		_replace_button->set_active(false);
 		break;
@@ -1116,6 +1159,7 @@ LooperPanel::update_state()
 	case LooperStateScratching:
 		_scratch_button->set_active(false);
 		break;
+#endif
 	case LooperStateMuted:
 	case LooperStateOffMuted:
 		_mute_button->set_active(false);
@@ -1148,6 +1192,7 @@ LooperPanel::update_state()
 		_multiply_button->set_active(true);
 		_flashing_button = _multiply_button;
 		break;
+#if FULLGUI
 	case LooperStateReplacing:
 		_replace_button->set_active(true);
 		_flashing_button = _replace_button;
@@ -1169,6 +1214,7 @@ LooperPanel::update_state()
 		_scratch_control->set_style(SliderBar::CenterStyle);
 		//_rate_button->Enable(true);
 		break;
+#endif
 	case LooperStateMuted:
 	case LooperStateOffMuted:
 		_mute_button->set_active(true);
@@ -1205,6 +1251,7 @@ LooperPanel::update_state()
 			case LooperStateMultiplying:
 				_flashing_button = _multiply_button;
 				break;
+#if FULLGUI
 			case LooperStateReplacing:
 				_flashing_button = _replace_button;
 				break;
@@ -1217,6 +1264,7 @@ LooperPanel::update_state()
 			case LooperStateInserting:
 				_flashing_button = _insert_button;
 				break;
+#endif
 			case LooperStateOneShot:
 				_flashing_button = _once_button;
 				break;
@@ -1224,24 +1272,30 @@ LooperPanel::update_state()
 			case LooperStateOffMuted:
 				if (state == LooperStatePlaying)
 					_flashing_button = _mute_button;
+#if FULLGUI
 				else if ( state == LooperStateMuted)
 					_flashing_button = _reverse_button;
+#endif
 				break;
 			case LooperStatePlaying:
 				//if (soloed) {
 				//	_flashing_button = _solo_button;
 				//}
+#if FULLGUI
 				if (state == LooperStatePlaying)
 					_flashing_button = _reverse_button;
-				else if( state == LooperStateMuted) {
+				else 
+                                if( state == LooperStateMuted) {
 					_flashing_button = _mute_button;
 				}
+#endif
 				break;
 			default:
 				break;
 			}
 			      
 		}
+#if FULLGUI
 		else if (state == LooperStatePlaying || state == LooperStateMuted) {
 			// special case, we are pending reverse
 			//if (soloed) {
@@ -1251,6 +1305,7 @@ LooperPanel::update_state()
 			//}
 			
 		}
+#endif
 		
 		// make sure flash time is going
 		if (!_flash_timer->IsRunning()) {
@@ -1263,12 +1318,14 @@ LooperPanel::update_state()
 			_flash_timer->Stop();
 
 			_loop_control->get_value(_index, wxT("rate_output"), val);
+#if FULLGUI
 			if (val < 0.0f) {
 				_reverse_button->set_active(true);
 			}
 			else {
 				_reverse_button->set_active(false);
 			}
+#endif
 
 			_solo_button->set_active(soloed);
 		}
@@ -1281,6 +1338,7 @@ LooperPanel::update_state()
 void
 LooperPanel::update_rate_buttons(float val)
 {
+#if FULLGUI
 	if (val == 1.0f) {
 		_1x_button->set_active(true);
 		_2x_button->set_active(false);
@@ -1301,6 +1359,7 @@ LooperPanel::update_rate_buttons(float val)
 		_2x_button->set_active(false);
 		_halfx_button->set_active(false);
 	}
+#endif
 }
 
 void
@@ -1313,7 +1372,6 @@ LooperPanel::on_flash_timer (wxTimerEvent &ev)
 	}
 }
 
-
 void
 LooperPanel::pressed_events (int button, wxString cmd)
 {
@@ -1323,7 +1381,6 @@ LooperPanel::pressed_events (int button, wxString cmd)
 void
 LooperPanel::released_events (int button, wxString cmd)
 {
-	
 	if (button == PixButton::MiddleButton) {
 		// force up
 		_loop_control->post_up_event (_index, cmd, true);
@@ -1483,6 +1540,7 @@ LooperPanel::slider_events(float val, int id)
 		ctrl = wxT("scratch_pos");
 		val = _scratch_control->get_value();
 		break;
+#if FULLGUI
 	case ID_RateControl:
 		ctrl = wxT("rate");
 		val = _rate_control->get_value();
@@ -1496,6 +1554,7 @@ LooperPanel::slider_events(float val, int id)
 		ctrl = wxT("pitch_shift");
 		val = _pitch_control->get_value();
 		break;
+#endif
 	case ID_OutputLatency:
 		ctrl = wxT("output_latency");
 		cerr << "outlat " << val << endl;
@@ -1564,12 +1623,14 @@ LooperPanel::control_bind_events(int id)
 		info.lbound = 0.25;
 		info.ubound = 4.0;
 		break;
+#if FULLGUI
 	case ID_StretchControl:
 		info.control = "stretch_ratio";
 		info.style = MidiBindInfo::NormalStyle;
 		info.lbound = 0.5;
 		info.ubound = 4.0;
 		break;
+#endif
 	case ID_PitchControl:
 		info.control = "pitch_shift";
 		info.style = MidiBindInfo::IntegerStyle;
@@ -1588,10 +1649,12 @@ LooperPanel::control_bind_events(int id)
 		info.control = "use_feedback_play";
 		info.style = MidiBindInfo::NormalStyle;
 		break;
+#if FULLGUI
 	case ID_TempoStretchCheck:
 		info.control = "tempo_stretch";
 		info.style = MidiBindInfo::NormalStyle;
 		break;
+#endif
 	default:
 		donothing = true;
 		break;
