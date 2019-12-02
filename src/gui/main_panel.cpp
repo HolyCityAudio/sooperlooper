@@ -460,7 +460,7 @@ MainPanel::init_loopers (int count)
  	if (!_looper_panels.empty()) {
  		wxSize bestsz = _looper_panels[0]->GetBestSize();
 		//cerr << "best w: " << bestsz.GetWidth() << endl;
- 		_scroller->SetVirtualSizeHints (bestsz.GetWidth(), -1);
+                _scroller->SetVirtualSizeHints(bestsz.GetWidth(), -1);
 		_topsizer->Layout();
 // 		_topsizer->Fit(this);
 // 		_topsizer->SetSizeHints(this);

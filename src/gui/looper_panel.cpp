@@ -228,10 +228,10 @@ LooperPanel::init()
 
 #if FULLGUI
 	inthresh_sizer->Add (slider, 1, wxALL|wxEXPAND, 0);
-	_thresh_control = slider = new SliderBar(this, ID_ThreshControl, 0.0f, 1.0f, 0.0f);
+	_thresh_control = slider = new SliderBar(this, ID_ThreshControl, 0.0f, 1.0f, 0.0f, false, wxDefaultPosition, wxSize(60,25));
 #else
 	_maininsizer->Add (slider, 0, wxLEFT | wxEXPAND, 5);
-	_thresh_control = slider = new SliderBar(this, ID_ThreshControl, 0.0f, 1.0f, 0.0f);
+	_thresh_control = slider = new SliderBar(this, ID_ThreshControl, 0.0f, 1.0f, 0.0f, false, wxDefaultPosition, wxSize(60,25));
 #endif
 	
 	slider->set_units(wxT(""));
@@ -248,7 +248,7 @@ LooperPanel::init()
 	_feedback_control = slider = new SliderBar(this, ID_FeedbackControl, 0.0f, 100.0f, 100.0f);
 #else
 	_maininsizer->Add (slider, 0, wxEXPAND|wxLEFT|wxTOP, 5);
-	_feedback_control = slider = new SliderBar(this, ID_FeedbackControl, 0.0f, 100.0f, 100.0f);
+	_feedback_control = slider = new SliderBar(this, ID_FeedbackControl, 0.0f, 100.0f, 100.0f, false, wxDefaultPosition, wxSize(60,25));
 #endif
 
 	slider->set_units(wxT("%"));
@@ -389,7 +389,7 @@ LooperPanel::init()
 // the scratch control is also the readout for loop position.  With the 
 // scratch button hidden, it just shows the loop positon.
 	// scratch control
-	_scratch_control = slider = new SliderBar(this, ID_ScratchControl, 0.0f, 1.0f, 0.0f, false, wxDefaultPosition, wxSize(60,30));
+	_scratch_control = slider = new SliderBar(this, ID_ScratchControl, 0.0f, 1.0f, 0.0f, false, wxDefaultPosition, wxSize(60,26));
 
 #if FULLGUI
 	lilrowsizer->Add (_sync_check, 1, wxLEFT, 3);
@@ -460,15 +460,15 @@ LooperPanel::init()
 #else
 	lilcolsizer = new wxBoxSizer(wxVERTICAL);
 	lilcolsizer->Add (_load_button, 0, wxTOP, 0);
-	lilcolsizer->Add (_trig_button, 0, wxTOP, 2);
- 	lilcolsizer->Add (_mute_button, 0, wxTOP, 2);
-	lilcolsizer->Add (_pause_button, 0, wxTOP, 2);
+	lilcolsizer->Add (_trig_button, 0, wxTOP, 1);
+ 	lilcolsizer->Add (_mute_button, 0, wxTOP, 1);
+	lilcolsizer->Add (_pause_button, 0, wxTOP, 1);
 	rowsizer->Add(lilcolsizer, 0, wxLEFT, 3);
 
 	lilcolsizer = new wxBoxSizer(wxVERTICAL);
 	lilcolsizer->Add (_save_button, 0, wxTOP, 0);
-	lilcolsizer->Add (_once_button, 0, wxTOP, 2);
- 	lilcolsizer->Add (_solo_button, 0, wxTOP, 2);
+	lilcolsizer->Add (_once_button, 0, wxTOP, 1);
+ 	lilcolsizer->Add (_solo_button, 0, wxTOP, 1);
 	rowsizer->Add(lilcolsizer, 0, wxLEFT, 3);
 #endif
 
@@ -602,7 +602,7 @@ LooperPanel::post_init()
 		_maininsizer->Add (_use_main_in_check, 0, wxALL|wxEXPAND|wxALIGN_CENTRE_VERTICAL ,0);
 		_maininsizer->Layout();
 #else
-		_maininsizer->Add (_use_main_in_check, 0, wxALL|wxEXPAND|wxALIGN_CENTRE_VERTICAL ,0);
+		_maininsizer->Add (_use_main_in_check, 0, wxALL|wxEXPAND ,3);
 		_maininsizer->Layout();
 #endif
 
